@@ -1,0 +1,472 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Assistant | AI PDF Chat</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+*{box-sizing:border-box}
+
+body{
+ margin:0;
+ font-family:Inter,sans-serif;
+ background:#0b0d14;
+ color:#f4f4f8;
+ min-height:100vh;
+}
+
+.layout{
+ display:flex;
+ min-height:100vh;
+}
+
+.sidebar{
+ width:270px;
+ background:#11131d;
+ border-right:1px solid #25283a;
+ padding:25px 20px;
+ display:flex;
+ flex-direction:column;
+}
+
+.logo{
+ font-size:22px;
+ font-weight:800;
+ letter-spacing:-1px;
+ margin-bottom:45px;
+}
+
+.logo span{color:#a99afc}
+
+.new-chat{
+ padding:13px;
+ border:1px solid #39354f;
+ border-radius:10px;
+ background:#201e32;
+ color:white;
+ cursor:pointer;
+ font-size:14px;
+ text-align:left;
+}
+
+.upload-box{
+ margin-top:35px;
+ padding:20px;
+ border:1px dashed #55516e;
+ border-radius:14px;
+ text-align:center;
+ background:#171925;
+}
+
+.upload-box h3{font-size:14px}
+
+.upload-box p{
+ color:#9294a8;
+ font-size:12px;
+ line-height:1.6;
+}
+
+.upload-box input{
+ width:100%;
+ font-size:11px;
+ margin-top:12px;
+}
+
+.file-name{
+ font-size:12px;
+ color:#a99afc;
+ overflow-wrap:anywhere;
+}
+
+.sidebar-bottom{
+ margin-top:auto;
+ color:#777b91;
+ font-size:12px;
+ line-height:1.7;
+}
+
+.main{
+ flex:1;
+ display:flex;
+ flex-direction:column;
+ min-width:0;
+}
+
+.topbar{
+ height:72px;
+ padding:20px 35px;
+ border-bottom:1px solid #25283a;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+}
+
+.status{
+ font-size:12px;
+ color:#80d6a5;
+}
+
+.content{
+ width:100%;
+ max-width:950px;
+ margin:auto;
+ padding:45px 25px;
+ flex:1;
+ display:flex;
+ flex-direction:column;
+}
+
+.hero{
+ padding:32px;
+ border:1px solid #343653;
+ border-radius:20px;
+ background:linear-gradient(120deg,#171a2c,#20203b,#171a2c);
+ margin-bottom:25px;
+}
+
+.hero h1{
+ font-size:34px;
+ letter-spacing:-1.5px;
+ margin:0 0 12px;
+}
+
+.hero p{
+ color:#a6a7bb;
+ font-size:14px;
+ line-height:1.8;
+}
+
+.tag{
+ display:inline-block;
+ padding:7px 12px;
+ background:#292541;
+ border-radius:20px;
+ color:#c4b7ff;
+ font-size:11px;
+ margin-bottom:15px;
+}
+
+.messages{
+ display:flex;
+ flex-direction:column;
+ gap:17px;
+ flex:1;
+}
+
+.message{
+ max-width:85%;
+ padding:17px 20px;
+ border-radius:15px;
+ line-height:1.7;
+ font-size:14px;
+ white-space:pre-wrap;
+ overflow-wrap:anywhere;
+}
+
+.user{
+ align-self:flex-end;
+ background:#292541;
+ border:1px solid #51458a;
+}
+
+.assistant{
+ align-self:flex-start;
+ background:#151824;
+ border:1px solid #292d40;
+}
+
+.sources{
+ color:#a99afc;
+ font-size:12px;
+ margin-top:12px;
+}
+
+.composer{
+ margin-top:25px;
+ background:#151824;
+ border:1px solid #343653;
+ border-radius:16px;
+ padding:14px;
+}
+
+.composer textarea{
+ width:100%;
+ resize:vertical;
+ min-height:65px;
+ background:transparent;
+ border:0;
+ outline:0;
+ color:white;
+ font-family:inherit;
+ font-size:14px;
+}
+
+.composer-bottom{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:10px;
+}
+
+.hint{
+ color:#777b91;
+ font-size:11px;
+}
+
+.send{
+ background:#7160c8;
+ border:0;
+ padding:12px 24px;
+ border-radius:10px;
+ color:white;
+ font-weight:600;
+ cursor:pointer;
+}
+
+.send:disabled{
+ opacity:.5;
+ cursor:wait;
+}
+
+.clear{
+ background:transparent;
+ border:1px solid #39354f;
+ padding:10px;
+ color:#b8b7c9;
+ border-radius:9px;
+ cursor:pointer;
+}
+
+.footer{
+ color:#686b80;
+ font-size:11px;
+ text-align:center;
+ padding:20px;
+}
+
+@media(max-width:700px){
+ .layout{flex-direction:column}
+ .sidebar{width:100%;padding:15px}
+ .logo{margin-bottom:15px}
+ .upload-box{margin-top:15px}
+ .sidebar-bottom{display:none}
+ .topbar{padding:15px}
+ .content{padding:20px 14px}
+ .hero{padding:22px}
+ .hero h1{font-size:27px}
+ .message{max-width:95%}
+}
+</style>
+</head>
+
+<body>
+
+<div class="layout">
+
+<aside class="sidebar">
+
+<div class="logo">✦ RAG <span>ASSISTANT</span></div>
+
+<button class="new-chat" onclick="newChat()">＋ New conversation</button>
+
+<div class="upload-box">
+<h3>📄 Your document</h3>
+<p>Upload a PDF and start asking questions about its contents.</p>
+<input type="file" id="pdfFile" accept=".pdf,application/pdf">
+<div class="file-name" id="fileName">No document selected</div>
+</div>
+
+<div class="sidebar-bottom">
+✦ Powered by Google Gemini<br>
+Semantic PDF retrieval<br>
+Context-aware AI responses
+</div>
+
+</aside>
+
+<main class="main">
+
+<header class="topbar">
+<strong>AI Knowledge Assistant</strong>
+<span class="status">● API Connected</span>
+</header>
+
+<section class="content">
+
+<div class="hero">
+<span class="tag">✦ INTELLIGENT PDF CHAT</span>
+<h1>Knowledge, one question away.</h1>
+<p>
+Upload your PDF, retrieve relevant passages,
+and get intelligent answers powered by
+Google Gemini and Retrieval-Augmented Generation.
+</p>
+</div>
+
+<div class="messages" id="messages">
+<div class="message assistant">
+Welcome to RAG Assistant! ✦
+
+Upload a PDF from the left panel, then ask me anything about your document.
+
+I'll retrieve relevant information and provide answers with page references.
+</div>
+</div>
+
+<div class="composer">
+
+<textarea id="question"
+placeholder="Ask a question about your PDF..."
+></textarea>
+
+<div class="composer-bottom">
+<div>
+<span class="hint" id="hint">Upload a PDF to begin</span>
+</div>
+
+<div style="display:flex;gap:10px">
+<button class="clear" onclick="newChat()">Clear</button>
+<button class="send" id="sendBtn" onclick="sendQuestion()">Send ↗</button>
+</div>
+</div>
+
+</div>
+
+</section>
+
+<footer class="footer">
+RAG Assistant · Python · FastAPI · Google Gemini
+</footer>
+
+</main>
+</div>
+
+<script>
+const pdfInput = document.getElementById("pdfFile");
+const messages = document.getElementById("messages");
+const questionInput = document.getElementById("question");
+const sendBtn = document.getElementById("sendBtn");
+const hint = document.getElementById("hint");
+
+pdfInput.addEventListener("change", () => {
+ const file = pdfInput.files[0];
+
+ if (!file) return;
+
+ if (file.type !== "application/pdf") {
+   alert("Please select a PDF file.");
+   pdfInput.value = "";
+   return;
+ }
+
+ if (file.size > 4 * 1024 * 1024) {
+   alert("Please select a PDF smaller than 4 MB.");
+   pdfInput.value = "";
+   return;
+ }
+
+ document.getElementById("fileName").textContent =
+   "✓ " + file.name;
+
+ hint.textContent = "Document ready";
+});
+
+function addMessage(content, type) {
+ const div = document.createElement("div");
+ div.className = "message " + type;
+ div.textContent = content;
+ messages.appendChild(div);
+ messages.scrollTop = messages.scrollHeight;
+ return div;
+}
+
+async function sendQuestion() {
+ const file = pdfInput.files[0];
+ const question = questionInput.value.trim();
+
+ if (!file) {
+   alert("Please upload a PDF first.");
+   return;
+ }
+
+ if (!question) {
+   alert("Please enter a question.");
+   return;
+ }
+
+ sendBtn.disabled = true;
+ sendBtn.textContent = "Thinking...";
+ 
+ addMessage(question, "user");
+ questionInput.value = "";
+
+ const loading = addMessage(
+   "Searching your PDF and asking Gemini...",
+   "assistant"
+ );
+
+ const formData = new FormData();
+ formData.append("question", question);
+ formData.append("pdf", file);
+
+ try {
+   const response = await fetch("/api/chat", {
+     method: "POST",
+     body: formData
+   });
+
+   const data = await response.json();
+
+   loading.remove();
+
+   if (!response.ok) {
+     throw new Error(data.detail || "Request failed");
+   }
+
+   const reply = addMessage(
+     data.answer,
+     "assistant"
+   );
+
+   const source = document.createElement("div");
+   source.className = "sources";
+   source.textContent =
+     "Retrieved source pages: " +
+     data.source_pages.join(", ");
+
+   reply.appendChild(source);
+
+   hint.textContent = "Answer generated successfully";
+
+ } catch (error) {
+   loading.textContent = "Error: " + error.message;
+   hint.textContent = "Request failed";
+ } finally {
+   sendBtn.disabled = false;
+   sendBtn.textContent = "Send ↗";
+ }
+}
+
+function newChat() {
+ messages.innerHTML = "";
+
+ addMessage(
+   "New conversation started! Upload a PDF and ask your questions.",
+   "assistant"
+ );
+}
+
+questionInput.addEventListener("keydown", (event) => {
+ if (event.key === "Enter" && !event.shiftKey) {
+   event.preventDefault();
+   sendQuestion();
+ }
+});
+</script>
+
+</body>
+</html>
